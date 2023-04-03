@@ -168,24 +168,107 @@ ORDER BY district_id;#
 
 #Query 14
 #In the card table, how many cards exist for each type? Rank the result starting with the most frequent type.
-SELECT `type` FROM card;
-ORDER BY `type`;
+SELECT `type`, count(`type`) FROM card
+GROUP BY `type`; 
+#classic	659
+#junior	145
+#gold	88
+
 
 #Query 15
 #Using the loan table, print the top 10 account_ids based on the sum of all of their loan amounts.
-SELECT account_id, sum(amount) FROM loan
-ORDER BY account_id DESC
+SELECT account_id, amount FROM loan
+ORDER BY amount DESC
 LIMIT 10;
+
+#7542	590820
+#8926	566640
+#2335	541200
+#817	538500
+#2936	504000
+#7049	495180
+#10451	482940
+#6950	475680
+#7966	473280
+#339	468060
 
 #Query 16
 #In the loan table, retrieve the number of loans issued for each day, before (excl) 930907, ordered by date in descending order.
-SELECT count(loan), `date` FROM loan
-WHERE date <930907
-GROUP BY loan;
+SELECT `date`,loan_id FROM loan
+WHERE `date` <930907
+ORDER BY `date` DESC;
+#930906	7240
+#930803	5325
+#930728	6863
+#930711	5316
+#930705	5314
+
+#Query 17
+#In the loan table, for each day in December 1997, count the number of loans issued for each unique loan duration, 
+#ordered by date and duration, both in ascending order. You can ignore days without any loans in your output.
+SELECT `date`, duration  FROM loan #count(loan)
+WHERE `date` >=971201 and `date` <=971231 
+#GROUP BY  loan_id
+ORDER BY `date` and duration;#counting loan_id did not work out
+#971206	24	1
+#971206	36	1
+#971208	12	3
+#971209	12	1
+#971209	24	1
+#971210	12	1
+#971211	24	1
+#971211	48	1
+#971213	24	1
+#971220	36	1
+#971221	36	1
+#971224	60	1
+#971225	24	1
+#971225	60	1
+
+#Query 18
+#In the trans table, for account_id 396, sum the amount of transactions for each type (VYDAJ = Outgoing, PRIJEM = Incoming). 
+#Your output should have the account_id, the type and the sum of amount, named as total_amount. Sort alphabetically by type.
+SELECT account_id,type, SUM(amount) AS total_amount  FROM trans
+WHERE account_id = 396# and type = VYDAJ and PRIJEM;
+GROUP BY type;
+#396	PRIJEM	1028138.6999740601
+#396	VYDAJ	1485814.400024414
+
+#Query 19
+#From the previous output, translate the values for type to English, rename the column to transaction_type, round total_amount down to an integer
+SELECT  account_id,type, floor(SUM(amount)) AS total_amount  FROM trans
+#SELECT TRANSLATE(type,"PRIJEM", "INCOMING"), TRANSLATE (type,"VYDAJ", "OUTGOING") FROM trans
+#SELECT  account_id,type, floor(SUM(amount)) AS total_amount  FROM trans
+WHERE account_id = 396# and type = VYDAJ and PRIJEM;
+GROUP BY type;
+#SELECT TRANSLATE(type, "PRIJEM", "INCOMING") FROM trans;# did not suucced i the translation to English
+#SELECT TRANSLATE (type, "VYDAJ", "OUTGOING") FROM trans
+#SELECT TRANSLATE('Hello world','aeiou,','AEIOU') as message
+#396	INCOMING	1028138
+#396	OUTGOING	148581
+
+#Query 20
+#From the previous result, modify your query so that it returns only one row, with a column for incoming amount, outgoing amount and the difference.
+SELECT 
 
 
+#396	1028138	1485814	-457676
 
 
+#Query 21
+#Continuing with the previous example, rank the top 10 account_ids based on their difference.
+
+
+#9707	869527
+#3424	816372
+#3260	803055
+#2486	735219
+#1801	725382
+#4470	707243
+#3674	703531
+#9656	702786
+#2227	696564
+#6473	692580
 
 
 
