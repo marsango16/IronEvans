@@ -48,7 +48,7 @@ USE bank;
 #Get the id values of the first 5 clients from district_id with a value equals to 1.
 
 SELECT client_id FROM client
-#WHERE district_id=1
+WHERE district_id=1
 ORDER BY district_id
 LIMIT 5;#22  2  3  28  23
 
@@ -93,7 +93,7 @@ LIMIT 5; #
 #Query 7
 #What are the top 5 account_ids with the lowest loan amount that have a loan duration of 60 in the loan table?
 SELECT account_id,amount FROM loan
-WHERE duration = 60
+WHERE duration IN (60)#
 ORDER BY amount
 LIMIT 5;
 #10954
@@ -106,7 +106,8 @@ LIMIT 5;
 #Query 8
 #What are the unique values of k_symbol in the order table?
 #Note: There shouldn't be a table name order, since order is reserved from the ORDER BY clause. You have to use backticks to escape the order table name.
-SELECT DISTINCT k_symbol FROM bank.order;#use back tick to escape
+SELECT DISTINCT k_symbol FROM bank.order
+WHERE k_symbol <>"";#use back tick to escape
 #SIPO
 #UVER
 #POJISTNE
@@ -124,6 +125,7 @@ WHERE account_id = 34;
 #In the order table, which account_ids were responsible for orders between order_id 29540 and order_id 29560 (inclusive)?
 SELECT DISTINCT account_id FROM bank.order
 WHERE (order_id >=29540 AND order_id <= 29560);
+#WHERE order_id BETWEEN 29540 AND 29560;
 
 
 #Query 11
@@ -206,10 +208,11 @@ ORDER BY `date` DESC;
 #Query 17
 #In the loan table, for each day in December 1997, count the number of loans issued for each unique loan duration, 
 #ordered by date and duration, both in ascending order. You can ignore days without any loans in your output.
-SELECT `date`, duration  FROM loan #count(loan)
-WHERE `date` >=971201 and `date` <=971231 
-#GROUP BY  loan_id
-ORDER BY `date` and duration;#counting loan_id did not work out
+SELECT date, duration, count(loan_id)
+FROM loan
+WHERE date LIKE "9712%"#WHERE `date` >=971201 and `date` <=971231
+GROUP BY date, duration
+ORDER BY date, duration;
 #971206	24	1
 #971206	36	1
 #971208	12	3
@@ -224,40 +227,57 @@ ORDER BY `date` and duration;#counting loan_id did not work out
 #971224	60	1
 #971225	24	1
 #971225	60	1
+SELECT account_id, type, sum(amount) AS total_amount
+FROM trans
+WHERE account_id=396
+GROUP BY account_id, type;
 
 #Query 18
 #In the trans table, for account_id 396, sum the amount of transactions for each type (VYDAJ = Outgoing, PRIJEM = Incoming). 
 #Your output should have the account_id, the type and the sum of amount, named as total_amount. Sort alphabetically by type.
-SELECT account_id,type, SUM(amount) AS total_amount  FROM trans
+SELECT account_id,type, SUM(amount) AS total_amount  
+FROM trans
 WHERE account_id = 396# and type = VYDAJ and PRIJEM;
-GROUP BY type;
+GROUP BY type;#GROUP BY account_id, type;
 #396	PRIJEM	1028138.6999740601
 #396	VYDAJ	1485814.400024414
 
 #Query 19
 #From the previous output, translate the values for type to English, rename the column to transaction_type, round total_amount down to an integer
-SELECT  account_id,type, floor(SUM(amount)) AS total_amount  FROM trans
-#SELECT TRANSLATE(type,"PRIJEM", "INCOMING"), TRANSLATE (type,"VYDAJ", "OUTGOING") FROM trans
-#SELECT  account_id,type, floor(SUM(amount)) AS total_amount  FROM trans
-WHERE account_id = 396# and type = VYDAJ and PRIJEM;
-GROUP BY type;
-#SELECT TRANSLATE(type, "PRIJEM", "INCOMING") FROM trans;# did not suucced i the translation to English
-#SELECT TRANSLATE (type, "VYDAJ", "OUTGOING") FROM trans
-#SELECT TRANSLATE('Hello world','aeiou,','AEIOU') as message
+SELECT 
+    account_id,
+    CASE type
+    WHEN 'PRIJEM' THEN 'INCOMING'
+    WHEN 'VYDAJ' THEN 'OUTGOING'
+    END AS transaction_type,
+    floor(sum(amount)) as total_amount
+FROM trans
+WHERE account_id=396
+GROUP BY account_id, type;
 #396	INCOMING	1028138
 #396	OUTGOING	148581
 
 #Query 20
 #From the previous result, modify your query so that it returns only one row, with a column for incoming amount, outgoing amount and the difference.
-SELECT 
-
-
+SELECT
+    account_id, 
+    (SELECT floor(sum(amount)) FROM trans WHERE type = 'PRIJEM' AND account_id = 396) AS incoming_amount,
+    (SELECT floor(sum(amount)) FROM trans WHERE type = 'VYDAJ' AND account_id = 396) AS outgoing_amount,
+    (SELECT FLOOR(SUM(CASE type WHEN 'PRIJEM' THEN amount ELSE -amount END)) FROM trans WHERE account_id = 396) AS difference
+FROM trans
+WHERE account_id = 396
+LIMIT 1;
 #396	1028138	1485814	-457676
 
 
 #Query 21
 #Continuing with the previous example, rank the top 10 account_ids based on their difference.
-
+SELECT account_id,
+    FLOOR(SUM(CASE type WHEN 'PRIJEM' THEN amount ELSE -amount END)) AS difference
+FROM trans
+GROUP BY account_id
+ORDER BY difference DESC
+LIMIT 10;
 
 #9707	869527
 #3424	816372
