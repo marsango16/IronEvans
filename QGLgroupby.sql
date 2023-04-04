@@ -102,7 +102,6 @@ LIMIT 5;
 #1766
 #10799
 
-
 #Query 8
 #What are the unique values of k_symbol in the order table?
 #Note: There shouldn't be a table name order, since order is reserved from the ORDER BY clause. You have to use backticks to escape the order table name.
@@ -290,7 +289,186 @@ LIMIT 10;
 #2227	696564
 #6473	692580
 
+#Lab | SQL Queries - Join Two Tables
+USE sakila;
+#Which actor has appeared in the most films?
+#Hint:  group by actor_id
+#GINA DEGENERES	42
+SELECT actor.first_name, actor.last_name, COUNT(*) AS movie_count
+FROM actor
+JOIN film_actor ON actor.actor_id = film_actor.actor_id
+GROUP BY actor.actor_id
+ORDER BY movie_count DESC
+LIMIT 1;
+
+#2. Most active customer (the customer that has rented the most number of films)
+#Expected output:
+#ELEANOR HUNT	46
+SELECT customer.first_name, customer.last_name, COUNT(*) AS active_customer
+FROM customer
+JOIN rental ON customer.customer_id = rental.customer_id
+GROUP BY customer.customer_id
+ORDER BY active_customer DESC
+LIMIT 1;
+
+#3. List number of films per category.
+#Expected output:
+#Action	64
+#Animation	66
+#Children	60
+#Classics	57
+#Comedy	58
+#Documentary	68
+#Drama	62
+#Family	69
+#Foreign73
+#Games	61
+#Horror	56
+#Music	51
+#New	63
+#Sci-Fi	61
+#Sports	74
+#Travel	57
+#3. List number of films per category.
+SELECT  category.name, COUNT(category.name) AS category_count
+FROM category
+JOIN film_category ON category.category_id = film_category.category_id
+GROUP BY category.category_id#
+ORDER BY category.name;
+
+
+#4. Display the first and last names, as well as the address, of each staff member.
+#Expected output:
+#Mike	Hillyer		23 Workhaven Lane
+#Jon	Stephens	1411 Lillydale Drive
+SELECT  staff.first_name, staff.last_name 
+FROM staff
+JOIN address ON staff.address_id = address.address_id
+ORDER BY address.address_id;
+
+#5. get films titles where the film language is either English or italian, and whose titles starts with letter "M" , sorted by title descending.
+
+#Expected output: 71 rows including
+#title,name
+#"MYSTIC TRUMAN",English
+#"MUSSOLINI SPOILERS",English
+#"MUSKETEERS WAIT",English
+#"MUSIC BOONDOCK",English
+#"MUSCLE BRIGHT",English
+#"MURDER ANTITRUST",English
+#"MUPPET MILE",English
+#"MUMMY CREATURES",English
+#"MULHOLLAND BEAST",English
+SELECT  film.title, film.language_id
+FROM film
+JOIN sakila.language ON film.language_id = language.language_id
+WHERE 
+language.name = "English" or language.name ="italian" AND film.title LIKE "M%"
+#GROUP BY language.name
+ORDER BY film.title DESC;
+#SELECT  language.name
+#FROM sakila.language
+#JOIN film ON language.language_id = film.language_id
+#WHERE 
+#language.name = "English" or language.name ="italian" AND film.title LIKE "M%"
+#GROUP BY language.language_id 
+#ORDER BY film.title;
+    
+    
+#6. Display the total amount rung up by each staff member in August of 2005.
+#Expected output:
+#Jon Stephens	12218.48
+#Mike Hillyer	11853.65
+SELECT  staff.first_name, staff.last_name, sum(amount)
+FROM staff
+JOIN payment ON staff.staff_id = payment.staff_id
+WHERE payment.payment_date BETWEEN "20050801" AND "20050831" 
+#WHERE payment.payment_date LIKE "200508%" 
+GROUP BY payment.staff_id;
+
+
+#7. 
+#Expected output: Top 10 out of 997 rows
+#LAMBS CINCINATTI		15
+#CHITTY LOCK			13
+#CRAZY HOME			13
+#RANDOM GO			13
+#DRACULA CRYSTAL		13
+#BOONDOCK BALLROOM	13
+#MUMMY CREATURES		13
+#HELLFIGHTERS SIERRA	12
+#LONELY ELEPHANT		12
+#ARABIA DOGMA		12
+#List each film and the number of actors who are listed for that film.
+SELECT  film.title, COUNT(actor_id) AS actor_count
+FROM film
+JOIN film_actor ON film_actor.film_id = film.film_id
+GROUP BY film.film_id;
 
 
 
+
+#8. Using the tables payment and customer and the JOIN command, list the total paid by each customer. List the customers alphabetically by last name.
+#Expected output: Top 10 out of 599 rows
+#RAFAEL	ABNEY	97.79
+#NATHANIEL	ADAM	133.72
+#KATHLEEN	ADAMS	92.73
+#DIANA	ALEXANDER	105.73
+#GORDON	ALLARD	160.68
+#SHIRLEY	ALLEN	126.69
+#CHARLENE	ALVAREZ	114.73
+#LISA	ANDERSON	106.76
+#JOSE	ANDREW	96.75
+#IDA	ANDREWS	76.77
+#Using the tables payment and customer and the JOIN command, 
+#list the total paid by each customer. List the customers alphabetically by last name.
+SELECT customer.first_name, customer.last_name, sum(amount) AS paid_amount
+FROM customer
+JOIN payment ON customer.customer_id = payment.customer_id
+GROUP BY payment.customer_id
+ORDER BY customer.last_name;
+
+
+
+
+#9. Write sql statement to check if you can find any actor who never particiapted 
+#in any film.
+#Expect output: no actor found.
+SELECT actor.first_name, actor.last_name 
+FROM actor
+LEFT JOIN film_actor
+ON actor.actor_id = film_actor.actor_id
+WHERE actor.actor_id IS NULL;
+
+
+#10. get the addresses that have NO customers, and ends with the letter "e"
+#address
+#"47 MySakila Drive"
+#"23 Workhaven Lane"
+#"1411 Lillydale Drive"
+SELECT address.address, address.address2#, COUNT(customer_id) AS total_customers
+FROM address
+JOIN customer ON address.address_id = customer.address_id
+WHERE 
+address.address LIKE "%e" AND address.address2 LIKE "%e" 
+AND address  IS NULL 
+AND address2 IS NULL#;
+ #AND total_customers =0
+#GROUP BY payment.address_id;
+ORDER BY address.address_id;
+
+
+
+
+#Optional: what is the most rented film?
+#The answer is "Bucket Brotherhood" .
+#This query might require using more than one join statement. Give it a try.
+
+SELECT film.title
+FROM  film
+INNER JOIN inventory using (film_id)
+INNER JOIN rental using (inventory_id)
+GROUP BY film.title
+ORDER BY COUNT(rental_rate) DESC;
+17:44:47	SELECT film.title,film.rental_rate, COUNT(rental_rate) AS most_rented FROM  film INNER JOIN inventory ON film.film_id =  inventory.film_id INNER JOIN rental ON inventory.inventory_id = rental.inventory_id GROUP BY film.title ORDER BY COUNT(rental_rate) DESC LIMIT 0, 1000	Error Code: 1055. Expression #2 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'sakila.film.rental_rate' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by	0.0023 sec
 
