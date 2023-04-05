@@ -709,3 +709,18 @@ WHERE film_id IN (SELECT film_id
 #WESLEY BULL
 #ZACHARY HITE
 
+SELECT AVG(amount)
+FROM payment;
+SELECT first_name, last_name
+FROM customer
+WHERE customer_id IN (SELECT customer_id
+						FROM payment
+                        WHERE amount > 4.200667);#It does not capture especufic customers that are above the average
+#Check the amaount and average amoount per customer
+SELECT amount, AVG(amount)
+FROM payment
+GROUP BY amount;
+#Same
+
+     
+	
