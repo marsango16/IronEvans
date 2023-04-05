@@ -289,6 +289,7 @@ LIMIT 10;
 #2227	696564
 #6473	692580
 
+#WEEK2, DAY 2
 #Lab | SQL Queries - Join Two Tables
 USE sakila;
 #Which actor has appeared in the most films?
@@ -298,7 +299,7 @@ SELECT actor.first_name, actor.last_name, COUNT(*) AS movie_count
 FROM actor
 JOIN film_actor ON actor.actor_id = film_actor.actor_id
 GROUP BY actor.actor_id
-ORDER BY movie_count DESC
+ORDER BY movie_count DESC#actor is the count
 LIMIT 1;
 
 #2. Most active customer (the customer that has rented the most number of films)
@@ -308,7 +309,7 @@ SELECT customer.first_name, customer.last_name, COUNT(*) AS active_customer
 FROM customer
 JOIN rental ON customer.customer_id = rental.customer_id
 GROUP BY customer.customer_id
-ORDER BY active_customer DESC
+ORDER BY active_customer DESC#also works with Count(rental.inventrory_id)
 LIMIT 1;
 
 #3. List number of films per category.
@@ -366,6 +367,19 @@ WHERE
 language.name = "English" or language.name ="italian" AND film.title LIKE "M%"
 #GROUP BY language.name
 ORDER BY film.title DESC;
+
+SELECT f.title,l.name
+FROM film as f INNER JOIN language as l
+ON f.language_id = l.language_id
+WHERE f.title LIKE "M%" and l.name IN ("english", "italian")
+ORDER BY f.title DESC;
+
+SELECT fi.title, lan.name
+FROM language AS lan
+INNER JOIN film AS fi
+ON fi.language_id = lan.language_id
+WHERE fi.title REGEXP "^M" AND (fi.language_id = "1" OR fi.language_id = "2");
+
 #SELECT  language.name
 #FROM sakila.language
 #JOIN film ON language.language_id = film.language_id
@@ -382,7 +396,7 @@ ORDER BY film.title DESC;
 SELECT  staff.first_name, staff.last_name, sum(amount)
 FROM staff
 JOIN payment ON staff.staff_id = payment.staff_id
-WHERE payment.payment_date BETWEEN "20050801" AND "20050831" 
+WHERE payment.payment_date BETWEEN "20050801" AND "20050831" #WHERE payment.payment_date LIKE '2005-08%'
 #WHERE payment.payment_date LIKE "200508%" 
 GROUP BY payment.staff_id;
 
@@ -403,7 +417,8 @@ GROUP BY payment.staff_id;
 SELECT  film.title, COUNT(actor_id) AS actor_count
 FROM film
 JOIN film_actor ON film_actor.film_id = film.film_id
-GROUP BY film.film_id;
+GROUP BY film.film_id#count(fa.actor_id) DESC
+LIMIT 10;
 
 
 
@@ -426,8 +441,7 @@ SELECT customer.first_name, customer.last_name, sum(amount) AS paid_amount
 FROM customer
 JOIN payment ON customer.customer_id = payment.customer_id
 GROUP BY payment.customer_id
-ORDER BY customer.last_name;
-
+ORDER BY customer.first_name,customer.last_name;#asc
 
 
 
@@ -436,9 +450,10 @@ ORDER BY customer.last_name;
 #Expect output: no actor found.
 SELECT actor.first_name, actor.last_name 
 FROM actor
-LEFT JOIN film_actor
+JOIN film_actor
 ON actor.actor_id = film_actor.actor_id
-WHERE actor.actor_id IS NULL;
+WHERE actor.actor_id ="";#IS NULL;
+
 
 
 #10. get the addresses that have NO customers, and ends with the letter "e"
@@ -446,17 +461,34 @@ WHERE actor.actor_id IS NULL;
 #"47 MySakila Drive"
 #"23 Workhaven Lane"
 #"1411 Lillydale Drive"
-SELECT address.address, address.address2#, COUNT(customer_id) AS total_customers
+SELECT address.address, address.address2, COUNT(customer_id) AS total_customers
 FROM address
 JOIN customer ON address.address_id = customer.address_id
 WHERE 
-address.address LIKE "%e" AND address.address2 LIKE "%e" 
-AND address  IS NULL 
-AND address2 IS NULL#;
+address.address LIKE "%e" AND address.address2 LIKE "%e"
+#AND address  IS NULL 
+#AND address2 IS NULL#;
+#AND total_customers =0
+AND customer.address_id  IS NULL
  #AND total_customers =0
-#GROUP BY payment.address_id;
-ORDER BY address.address_id;
+GROUP BY address.address_id;
+#GROUP BY customer.address_id;
+#ORDER BY address.address_id;
 
+
+SELECT address.address, address.address2, COUNT(customer_id) AS total_customers
+FROM address
+JOIN customer ON address.address_id = customer.address_id
+WHERE 
+address.address LIKE "%e" AND address.address2 LIKE "%e"
+#AND address  IS NULL 
+#AND address2 IS NULL#;
+#AND total_customers =0
+AND customer.address_id  IS NULL
+ #AND total_customers =0
+GROUP BY address.address_id;
+#GROUP BY customer.address_id;
+#ORDER BY address.address_id;
 
 
 
@@ -464,11 +496,216 @@ ORDER BY address.address_id;
 #The answer is "Bucket Brotherhood" .
 #This query might require using more than one join statement. Give it a try.
 
-SELECT film.title
+SELECT film.title,COUNT(rental_rate)
 FROM  film
 INNER JOIN inventory using (film_id)
 INNER JOIN rental using (inventory_id)
 GROUP BY film.title
 ORDER BY COUNT(rental_rate) DESC;
-17:44:47	SELECT film.title,film.rental_rate, COUNT(rental_rate) AS most_rented FROM  film INNER JOIN inventory ON film.film_id =  inventory.film_id INNER JOIN rental ON inventory.inventory_id = rental.inventory_id GROUP BY film.title ORDER BY COUNT(rental_rate) DESC LIMIT 0, 1000	Error Code: 1055. Expression #2 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'sakila.film.rental_rate' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by	0.0023 sec
+#####
+
+##################
+#WEEK3 DAY3
+#############
+#Parent
+SELECT first_name
+FROM actor JOIN film_actor
+USING (actor_id)
+WHERE film_id =1;
+###
+#child
+SELECT first_name
+FROM actor
+WHERE actor_id IN (SELECT actor_id
+					FROM film_actor
+                    WHERE film_id =(SELECT film_id
+										FROM film
+										WHERE title = "Bucket Brotherhood"));
+######
+SELECT first_name
+FROM film_actor
+WHERE actor_id IN (SELECT actor_id 
+					FROM film_actor
+                    WHERE film_id IN (SELECT film_id
+										FROM film_category
+										WHERE category_id =(SELECT category_id 
+															FROM category
+                                                            
+#######################
+#LAB WORK 04.04.2023
+######################
+
+#1. List all films whose length is longer than the average of all the films.
+#Expected output:
+#489 rows including
+#AFFAIR PREJUDICE
+#AFRICAN EGG
+#AGENT TRUMAN
+#…
+#WRATH MILE
+#WRONG BEHAVIOR
+#YOUNG LANGUAGE
+#YOUTH KICK
+SELECT title
+FROM film
+WHERE length  > (SELECT AVG(length)
+					FROM film);
+#
+#2.How many copies of the film Hunchback Impossible exist in the inventory system?
+#Expected output:
+#6
+SELECT COUNT(inventory_id)
+FROM inventory
+WHERE film_id IN (SELECT film_id
+						FROM film
+                        WHERE title = "Hunchback Impossible");
+                                  
+
+#3. Use subqueries to display all actors who appear in the film Alone Trip.
+#Expected output:
+#ED CHASE
+#KARL BERRY
+#UMA WOOD
+#WOODY JOLIE
+#SPENCER DEPP
+#CHRIS DEPP
+#LAURENCE BULLOCK
+#RENEE BALL
+SELECT first_name,last_name
+FROM actor
+WHERE actor_id IN (SELECT actor_id 
+						FROM film_actor
+                        WHERE film_id IN (SELECT film_id
+											FROM film
+                                            WHERE title = "Alone Trip"));
+                                            
+
+#4.Sales have been lagging among young families, and you wish to target all family movies for a promotion. Identify all movies categorized as family films.
+#Expected output:
+#69 rows including 
+#AFRICAN EGG
+#APACHE DIVINE
+#ATLANTIS CAUSE
+#BAKED CLEOPATRA
+#BANG KWAI
+#BEDAZZLED MARRIED
+#BILKO ANONYMOUS
+#BLANKET BEVERLY
+SELECT title
+FROM film
+WHERE film_id IN (SELECT film_id 
+						FROM film_category
+                        WHERE category_id IN (SELECT category_id
+											FROM category
+                                            WHERE category_id IN (SELECT category_id
+																	FROM category
+																	WHERE name = "family")));
+
+#5. Get name and email from customers from Canada using subqueries. Do the same with joins. Note that to create a join, you will have to identify the correct tables with their primary keys and foreign keys, that will help you get the relevant information.
+#Expected output:
+#DERRICK BOURQUE	DERRICK.BOURQUE@sakilacustomer.org
+#DARRELL POWER	DARRELL.POWER@sakilacustomer.org
+#LORETTA CARPENTER	LORETTA.CARPENTER@sakilacustomer.org
+#CURTIS IRBY	CURTIS.IRBY@sakilacustomer.org
+#TROY QUIGLEY	TROY.QUIGLEY@sakilacustomer.org
+SELECT first_name, last_name, email
+FROM customer
+WHERE address_id IN (SELECT address_id 
+						FROM address
+                        WHERE city_id IN (SELECT city_id
+											FROM city
+                                            WHERE country_id IN (SELECT country_id
+																	FROM country
+																	WHERE country = "Canada")));
+                                            
+                                            
+
+#Optional
+#1. Which are films starred by the most prolific actor? 
+#Most prolific actor is defined as the actor that has acted in the most number of films. 
+#First you will have to find the most prolific actor and then use that actor_id to find the different films that he/she starred.
+#Expected output:
+#42 rows including: 
+#BED HIGHBALL
+#CALENDAR GUNFIGHT
+#CHAMBER ITALIAN
+#CHAPLIN LICENSE
+#CHARIOTS CONSPIRACY
+#CLUELESS BUCKET
+#COLDBLOODED DARLING
+#CONEHEADS SMOOCHY
+#DARKNESS WAR
+#DEER VIRGINIAN
+#
+SELECT actor_id, COUNT(film_id) AS number_movies
+FROM film_actor
+GROUP BY actor_id
+ORDER BY number_movies DESC
+LIMIT 1;
+#
+SELECT actor_id
+FROM film_actor
+GROUP BY actor_id
+ORDER BY COUNT(film_id) DESC
+LIMIT 1;
+#
+SELECT title
+FROM film
+WHERE film_id IN (SELECT film_id 
+					FROM film_actor
+					WHERE actor_id = 107);
+#OR
+SELECT title
+FROM film
+WHERE film_id IN (SELECT film_id 
+					FROM film_actor
+					WHERE actor_id = (SELECT actor_id
+										FROM film_actor
+										GROUP BY actor_id
+										ORDER BY COUNT(film_id) DESC
+										LIMIT 1));
+
+
+#2. Films rented by most profitable customer. 
+#You can use the customer table and payment table to find the most profitable customer 
+#ie the customer that has made the largest sum of payments
+#Expected output:
+#44 rows including 
+#DESTINY SATURDAY
+#CYCLONE FAMILY
+#SLUMS DUCK
+#FIDELITY DEVIL
+#SPLASH GUMP
+#MISSION ZOOLANDER
+#MULHOLLAND BEAST
+#PRINCESS GIANT
+#PARIS WEEKEND
+#RACER EGG
+
+SELECT first_name, last_name, customer_id
+FROM customer
+WHERE customer_id = (SELECT customer_id 
+					FROM payment
+                    ORDER BY amount DESC
+                    LIMIT 1);#13
+                    SELT
+
+SELECT title
+FROM film
+WHERE film_id IN (SELECT film_id
+					FROM inventory
+                    WHERE inventory_id IN (SELECT inventory_id
+											FROM rental
+                                            WHERE customer_id= 13));
+                                                                    
+#3. Customers who spent more than the average payments(this refers to the average of all amount spent per each customer).
+#Expected output:
+#285 rows including:
+#ALAN KAHN
+#ALEX GRESHAM
+#ALEXANDER FENNELL
+#…
+#WARREN SHERROD
+#WESLEY BULL
+#ZACHARY HITE
 
